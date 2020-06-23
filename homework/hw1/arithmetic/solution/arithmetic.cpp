@@ -3,12 +3,12 @@
 #include <cctype>
 #include <iostream>
 #include <tuple>
+#include <stdexcept>
 
 using namespace std;
 
-class Token
+struct Token
 {
-public:
     enum class Kind
     {
         number,
@@ -25,16 +25,30 @@ public:
     int precedence;
     bool binary;
 
-    Token(Kind kind, float value) : kind(kind), value(value)
-    {
-        this->precedence = this->get_precedence();
-        this->binary = this->is_binary();
-    }
-
-private:
-    int get_precedence() const
+    inline float apply(const Token& left, const Token& right)
     {
         switch (this->kind)
+        {
+        case Token::Kind::plus:
+            return left.value + right.value;
+        case Token::Kind::minus:
+            return left.value - right.value;
+        case Token::Kind::times:
+            return left.value * right.value;
+        case Token::Kind::divide:
+            if (right.value == 0)
+            {
+                throw logic_error("divide by zero");
+            }
+            return left.value / right.value;
+        default:
+            throw invalid_argument("invalid state");
+        }
+    }
+
+    static int get_precedence(Kind kind)
+    {
+        switch (kind)
         {
         case Token::Kind::plus:
         case Token::Kind::minus:
@@ -49,9 +63,9 @@ private:
         }
     }
 
-    bool is_binary() const
+    static bool is_binary(Kind kind)
     {
-        switch (this->kind)
+        switch (kind)
         {
         case Token::Kind::plus:
         case Token::Kind::minus:
@@ -62,7 +76,18 @@ private:
             return false;
         }
     }
+
+    static Token from(Kind kind, float value)
+    {
+        return Token { kind, value, Token::get_precedence(kind), Token::is_binary(kind) };
+    }
+
+    static Token from(Kind kind)
+    {
+        return Token::from(kind, 0);
+    }
 };
+
 
 void consume_whitespace(string::const_iterator& it, string::const_iterator end)
 {
@@ -91,12 +116,12 @@ token_vector tokenize(const string& input)
         case '/':
         case '(':
         case ')':
-            tokens.push_back(Token { static_cast<Token::Kind>(*it++), 0 });
+            tokens.push_back(Token::from(static_cast<Token::Kind>(*it++)));
             break;
         default:
             size_t length;
             float value = stof(input.substr(distance(input.begin(), it)), &length);
-            tokens.push_back(Token { Token::Kind::number, value });
+            tokens.push_back(Token::from(Token::Kind::number, value));
             advance(it, length);
             break;
         }
@@ -111,7 +136,7 @@ Token parse_expression(token_iterator& it, token_iterator end, Token left, int m
 
 Token parse_primary(token_iterator& it, token_iterator end)
 {
-    Token result(Token::Kind::number, 0);
+    Token result;
     switch (it->kind)
     {
     case Token::Kind::left:
@@ -122,48 +147,28 @@ Token parse_primary(token_iterator& it, token_iterator end)
     case Token::Kind::minus:
         it++;
         result = parse_primary(it, end);
-        return Token(result.kind, -result.value);
-    case Token::Kind::number:
-        result = *it;
-        it++;
+        result.value = -result.value;
         return result;
+    case Token::Kind::number:
+        return *it++;
     default:
-        throw "invalid state";
+        throw invalid_argument("invalid state");
     }
 }
 
 Token parse_expression(token_iterator& it, token_iterator end, Token left, int minimum_precedence)
 {
-    float result = left.value;
-    while (it != end && it->binary && it->precedence > minimum_precedence)
+    while (it != end && it->binary && it->precedence >= minimum_precedence)
     {
         Token operation = *it++;
         Token right = parse_primary(it, end);
         while (it != end && it->binary && it->precedence > operation.precedence)
         {
-            int new_precedence = it->precedence;
-            it++;
-            right = parse_expression(it, end, right, new_precedence);
+            right = parse_expression(it, end, right, it->precedence);
         }
-        switch (operation.kind)
-        {
-        case Token::Kind::plus:
-            result = result + right.value;
-            break;
-        case Token::Kind::minus:
-            result = result - right.value;
-            break;
-        case Token::Kind::times:
-            result = result * right.value;
-            break;
-        case Token::Kind::divide:
-            result = result / right.value;
-            break;
-        default:
-            break;
-        }
+        left.value = operation.apply(left, right);
     }
-    return Token(Token::Kind::number, result);
+    return left;
 }
 
 Token parse_expression(token_iterator& it, token_iterator end)
@@ -171,7 +176,7 @@ Token parse_expression(token_iterator& it, token_iterator end)
     return parse_expression(it, end, parse_primary(it, end), 0);
 }
 
-float compute(const string& input)
+float evaluate(const string& input)
 {
     vector<Token> tokens = tokenize(input);
     token_iterator cursor = tokens.cbegin();

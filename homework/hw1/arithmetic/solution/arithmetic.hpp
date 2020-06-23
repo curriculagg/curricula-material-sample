@@ -1,3 +1,3 @@
 #include <string>
 
-float compute(const std::string& input);
+float evaluate(const std::string& input);

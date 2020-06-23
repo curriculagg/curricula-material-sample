@@ -8,7 +8,7 @@ test: main
 main: arithmetic.o build
 	$(compile) $(options) main.cpp $(build)/arithmetic.o -o $(build)/$@
 
-arithmetic.o: build
+arithmetic.o: arithmetic.cpp arithmetic.hpp build
 	$(compile) $(options) arithmetic.cpp -c -o $(build)/$@
 
 build:
