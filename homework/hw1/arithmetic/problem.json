@@ -1,0 +1,25 @@
+{
+  "title": "Arithmetic",
+  "authors": [
+    {
+      "name": "Noah Kim",
+      "email": "noahbkim@usc.edu"
+    }
+  ],
+  "topics": [
+    "syntax",
+    "parsing",
+    "recursion",
+    "trees"
+  ],
+  "grading": {
+    "points": 100,
+    "automated": {
+      "weight": "4"
+    },
+    "review": {
+      "weight": "1"
+    },
+    "manual": null
+  }
+}
