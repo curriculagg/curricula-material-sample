@@ -1,0 +1,25 @@
+{
+  "title": "Shell Banking",
+  "authors": [
+    {
+      "name": "Noah Kim",
+      "email": "noahbkim@usc.edu"
+    }
+  ],
+  "topics": [
+    "banking",
+    "cli",
+    "inheritance",
+    "oop"
+  ],
+  "grading": {
+    "points": 100,
+    "automated": {
+      "weight": "80"
+    },
+    "review": {
+      "weight": "20"
+    },
+    "manual": null
+  }
+}

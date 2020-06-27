@@ -12,7 +12,19 @@
   },
   "problems": [
     {
+      "path": "hello",
+      "grading": {
+        "weight": "10"
+      }
+    },
+    {
       "path": "arithmetic",
+      "grading": {
+        "weight": "50"
+      }
+    },
+    {
+      "path": "banking",
       "grading": {
         "weight": "25"
       }
