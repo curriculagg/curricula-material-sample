@@ -4,15 +4,9 @@
 #include <climits>
 #include <cmath>
 
-enum class Sign : std::uint8_t
-{
-    plus = 0,
-    minus = 1,
-};
+typedef std::int64_t Value;
 
-typedef std::uint64_t Value;
-
-constexpr Value E(size_t n)
+constexpr const Value E(size_t n)
 {
     switch (n)
     {
@@ -31,12 +25,8 @@ class Decimal
 public:
     // Default constructor creates zero
     Decimal() : value(0) {}
-
-    // Copy from other
-    Decimal(const Decimal<P>& decimal) : sign(decimal.sign), value(decimal.value) {}
-
-    // Internal constructor
-    Decimal(Sign sign, std::uint64_t value) : sign(sign), value(value) {}
+    Decimal(const Decimal<P>& decimal) : value(decimal.value) {}
+    Decimal(std::uint64_t value) : value(value) {}
 
     // Parsing
     Decimal(const std::string& value);
@@ -56,26 +46,16 @@ public:
     Decimal<P> operator/(const Decimal<P>& other) const;
 
 private:
-    Sign sign;
     Value value;
 };
 
 template<size_t P> Decimal<P>::Decimal(const std::string& value)
 {
     std::string buffer = value;
-    if (buffer[0] == '-')
-    {
-        this->sign = Sign::minus;
-        buffer.erase(0, 1);
-    }
-    else
-    {
-        this->sign = Sign::plus;
-    }
     std::size_t radix = value.find(".");
     if (radix == std::string::npos)
     {
-        this->value = stoll(buffer) * pow(10, P);
+        this->value = stoll(buffer) * E(P);
     }
     else
     {
@@ -88,7 +68,7 @@ template<size_t P> Decimal<P>::Decimal(const std::string& value)
         else
         {
             size_t padding = P - (buffer.size() - radix);
-            this->value = stoll(buffer) * std::pow(10, padding);
+            this->value = stoll(buffer) * E(padding);
         }
     }
 }
@@ -96,23 +76,19 @@ template<size_t P> Decimal<P>::Decimal(const std::string& value)
 template<size_t P> std::string Decimal<P>::to_string() const
 {
     std::string result = std::to_string(this->value);
-
+    size_t start = this->value < 0 ? 1 : 0;
     size_t size = result.size();
-    if (P > size)
+    if (P > size - start)
     {
-        for (size_t i = 0; i < P - size; i++)
+        for (size_t i = 0; i < P - size + start; i++)
         {
-            result.insert(0, "0");
+            result.insert(start, "0");
         }
-        size = P;
+        size = P + start;
     }
 
     size_t radix = size - P;
-    result.insert(radix, radix == 0 ? "0." : ".");
-    if (this->sign == Sign::minus)
-    {
-        result.insert(0, "-");
-    }
+    result.insert(radix, radix == start ? "0." : ".");
     return result;
 }
 
@@ -129,123 +105,72 @@ template<size_t P> std::ostream& operator<<(std::ostream &os, const Decimal<P>& 
 
 template<size_t P> Decimal<P> Decimal<P>::operator==(const Decimal<P>& other) const
 {
-    return this->sign == other.sign && this->value == other.value;
+    return this->value == other.value;
 }
 
 template<size_t P> Decimal<P> Decimal<P>::operator!=(const Decimal<P>& other) const
 {
-    return this->sign != other.sign || this->value != other.value;
+    return this->value != other.value;
 }
 
 template<size_t P> Decimal<P> Decimal<P>::operator<(const Decimal<P>& other) const
 {
-    switch (this->sign)
-    {
-    case Sign::plus:
-        switch (other.sign)
-        {
-        case Sign::plus:
-            return this->value < other.value;
-        case Sign::minus:
-            return false;
-        }
-    case Sign::minus:
-        switch (other.sign)
-        {
-        case Sign::plus:
-            return true;
-        case Sign::minus:
-            return this->value > other.value;
-        }
-    }
+    return this->value < other.value;
 }
 
 template<size_t P> Decimal<P> Decimal<P>::operator>(const Decimal<P>& other) const
 {
-    switch (this->sign)
-    {
-    case Sign::plus:
-        switch (other.sign)
-        {
-        case Sign::plus:
-            return this->value > other.value;
-        case Sign::minus:
-            return true;
-        }
-    case Sign::minus:
-        switch (other.sign)
-        {
-        case Sign::plus:
-            return false;
-        case Sign::minus:
-            return this->value < other.value;
-        }
-    }
+    return this->value > other.value;
 }
 
 template<size_t P> Decimal<P> Decimal<P>::operator+(const Decimal<P>& other) const
 {
-    if (this->sign == other.sign)
-    {
-        return Decimal<P>(this->sign, this->value + other.value);
-    }
-    else if (this->value == other.value)
-    {
-        return Decimal<P>();
-    }
-    else
-    {
-        if (this->value > other.value)
-        {
-            return Decimal<P>(this->sign, this->value - other.value);
-        }
-        else
-        {
-            return Decimal<P>(other.sign, other.value - this->value);
-        }
-    }
+    return Decimal<P>(this->value + other.value);
 }
 
 template<size_t P> Decimal<P> Decimal<P>::operator-(const Decimal<P>& other) const
 {
-    return *this + -other;
+    return Decimal<P>(this->value - other.value);
 }
 
 template<size_t P> Decimal<P> Decimal<P>::operator-() const
 {
-    return Decimal<P>(Sign(this->sign == Sign::plus ? Sign::minus : Sign::plus), this->value);
+    return Decimal<P>(-this->value);
 }
 
 template<size_t P> Decimal<P> Decimal<P>::operator*(const Decimal<P>& other) const
 {
-    Sign sign = this->sign == other.sign ? Sign::plus : Sign::minus;
-    uint64_t exponent = E(P);
-    uint64_t this_quotient = this->value / exponent;
-    uint64_t this_remainder = this->value % exponent;
-    uint64_t other_quotient = other.value / exponent;
-    uint64_t other_remainder = other.value % exponent;
-    uint64_t high = this_quotient * other_quotient;
-    uint64_t mid = this_quotient * other_remainder + this_remainder * other_quotient;
-    uint64_t low = this_remainder * other_remainder;
-    return Decimal<P>(sign, high * exponent + mid / exponent + low / E(2 * P));
+    const Value exponent = E(P);
+    const Value this_quotient = this->value / exponent;
+    const Value this_remainder = this->value % exponent;
+    const Value other_quotient = other.value / exponent;
+    const Value other_remainder = other.value % exponent;
+    const Value high = this_quotient * other_quotient;
+    const Value mid = this_quotient * other_remainder + this_remainder * other_quotient;
+    const Value low = this_remainder * other_remainder;
+    return Decimal<P>(high * exponent + mid / exponent + low / E(2 * P));
 }
 
 template<size_t P> Decimal<P> Decimal<P>::operator/(const Decimal<P>& other) const
 {
-    Value result = this->value / other.value * pow(10, P);
+    Value result = this->value / other.value * E(P);
     Value remainder = this->value % other.value;
-    Value exponent = pow(10, P);
+
+    // Build the fractional part
+    Value exponent = E(P - 1);
     for (int i = 0; i < P && remainder != 0; i++)
     {
-        exponent /= 10;
-        remainder *= 10;
         result += remainder / other.value * exponent;
         remainder = remainder % other.value;
+        remainder *= 10;
+        exponent /= 10;
     }
+
+    // Rounding
     if (remainder * 10 / other.value >= 5)
     {
         result += 1;
     }
-    Sign sign = this->sign == other.sign ? Sign::plus : Sign::minus;
-    return Decimal<P>(sign, result);
+
+    return Decimal<P>(result);
 }
