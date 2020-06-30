@@ -1,0 +1,25 @@
+{
+  "title": "Decimal",
+  "authors": [
+    {
+      "name": "Noah Kim",
+      "email": "noahbkim@usc.edu"
+    }
+  ],
+  "topics": [
+    "decimal",
+    "operator",
+    "overloading",
+    "math"
+  ],
+  "grading": {
+    "points": 100,
+    "automated": {
+      "weight": "80"
+    },
+    "review": {
+      "weight": "20"
+    },
+    "manual": null
+  }
+}

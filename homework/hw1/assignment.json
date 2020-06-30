@@ -18,15 +18,21 @@
       }
     },
     {
-      "path": "arithmetic",
+      "path": "decimal",
       "grading": {
-        "weight": "50"
+        "weight": "15"
       }
     },
     {
       "path": "banking",
       "grading": {
         "weight": "25"
+      }
+    },
+    {
+      "path": "arithmetic",
+      "grading": {
+        "weight": "50"
       }
     }
   ],
