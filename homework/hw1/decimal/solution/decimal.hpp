@@ -6,6 +6,11 @@
 
 typedef std::int64_t Value;
 
+int8_t sign(Value value)
+{
+    return (0 < value) - (value < 0);
+}
+
 constexpr const Value E(size_t n)
 {
     switch (n)
@@ -141,35 +146,50 @@ template<size_t P> Decimal<P> Decimal<P>::operator-() const
 template<size_t P> Decimal<P> Decimal<P>::operator*(const Decimal<P>& other) const
 {
     const Value exponent = E(P);
+
+    // Separate into integral and fractional
     const Value this_quotient = this->value / exponent;
     const Value this_remainder = this->value % exponent;
     const Value other_quotient = other.value / exponent;
     const Value other_remainder = other.value % exponent;
+
+    // Do multiplication
     const Value high = this_quotient * other_quotient;
-    const Value mid = this_quotient * other_remainder + this_remainder * other_quotient;
+    const Value middle = this_quotient * other_remainder + this_remainder * other_quotient;
     const Value low = this_remainder * other_remainder;
-    return Decimal<P>(high * exponent + mid / exponent + low / E(2 * P));
+
+    // Round
+    Value rounding = middle / E(P - 1) + low / E(2 * P - 1);
+    if (rounding % 10 >= 5)
+    {
+        rounding += 10;
+    }
+
+    // Sum
+    return Decimal<P>(high * exponent + rounding / 10);
 }
 
 template<size_t P> Decimal<P> Decimal<P>::operator/(const Decimal<P>& other) const
 {
-    Value result = this->value / other.value * E(P);
-    Value remainder = this->value % other.value;
+    Value left = this->value;
+    Value right = other.value;
+    Value result = left / right * E(P);
+    Value remainder = left % right;
 
     // Build the fractional part
-    Value exponent = E(P - 1);
+    Value exponent = E(P);
     for (int i = 0; i < P && remainder != 0; i++)
     {
-        result += remainder / other.value * exponent;
-        remainder = remainder % other.value;
         remainder *= 10;
         exponent /= 10;
+        result += remainder / right * exponent;
+        remainder %= right;
     }
 
     // Rounding
-    if (remainder * 10 / other.value >= 5)
+    if (abs(remainder * 10) / right >= 5)
     {
-        result += 1;
+        result += sign(left) * sign(right);
     }
 
     return Decimal<P>(result);
