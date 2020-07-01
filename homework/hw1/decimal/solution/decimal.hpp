@@ -11,17 +11,14 @@ int8_t sign(Value value)
     return (0 < value) - (value < 0);
 }
 
-constexpr const Value E(size_t n)
+constexpr Value E(size_t n)
 {
-    switch (n)
+    Value k = 1;
+    for (size_t i = 0; i < n; i++)
     {
-    case 0:
-        return 1;
-    case 1:
-        return 10;
-    default:
-        return E(n / 2) * E(n / 2) * (n % 2 == 1 ? 10 : 1);
+        k *= 10;
     }
+    return k;
 }
 
 template<size_t P>
@@ -145,13 +142,15 @@ template<size_t P> Decimal<P> Decimal<P>::operator-() const
 
 template<size_t P> Decimal<P> Decimal<P>::operator*(const Decimal<P>& other) const
 {
-    const Value exponent = E(P);
+    constexpr Value E_P = E(P);
+    constexpr Value E_M = E(P - 1);
+    constexpr Value E_L = E(2 * P - 1);
 
     // Separate into integral and fractional
-    const Value this_quotient = this->value / exponent;
-    const Value this_remainder = this->value % exponent;
-    const Value other_quotient = other.value / exponent;
-    const Value other_remainder = other.value % exponent;
+    const Value this_quotient = this->value / E_P;
+    const Value this_remainder = this->value % E_P;
+    const Value other_quotient = other.value / E_P;
+    const Value other_remainder = other.value % E_P;
 
     // Do multiplication
     const Value high = this_quotient * other_quotient;
@@ -159,25 +158,27 @@ template<size_t P> Decimal<P> Decimal<P>::operator*(const Decimal<P>& other) con
     const Value low = this_remainder * other_remainder;
 
     // Round
-    Value rounding = middle / E(P - 1) + low / E(2 * P - 1);
+    Value rounding = middle / E_M + low / E_L;
     if (rounding % 10 >= 5)
     {
         rounding += 10;
     }
 
     // Sum
-    return Decimal<P>(high * exponent + rounding / 10);
+    return Decimal<P>(high * E_P + rounding / 10);
 }
 
 template<size_t P> Decimal<P> Decimal<P>::operator/(const Decimal<P>& other) const
 {
     Value left = this->value;
     Value right = other.value;
-    Value result = left / right * E(P);
+
+    constexpr Value E_P = E(P);
+    Value result = left / right * E_P;
     Value remainder = left % right;
+    Value exponent = E_P;
 
     // Build the fractional part
-    Value exponent = E(P);
     for (int i = 0; i < P && remainder != 0; i++)
     {
         remainder *= 10;
