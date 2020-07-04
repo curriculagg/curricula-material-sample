@@ -6,24 +6,16 @@
 
 namespace decimal
 {
-    // The type we'll use to represent the decimal value internally
     typedef std::int64_t value_type;
 
-    // Determine the sign of a given value in terms of -1, 0, and 1
     inline int8_t sign(value_type value)
     {
-        return (0 < value) - (value < 0);
+
     }
 
-    // Raise 10 to the n
     constexpr value_type E(size_t n)
     {
-        value_type k {1};
-        for (size_t i {}; i < n; i++)
-        {
-            k *= 10;
-        }
-        return k;
+
     }
 
     template<size_t P>
@@ -35,7 +27,6 @@ namespace decimal
 
         // String conversion
         static Decimal from_string(const std::string& value);
-        static Decimal from_string(const std::string& value, size_t& idx);
         std::string to_string() const;
 
     private:
@@ -70,13 +61,12 @@ namespace decimal
         friend Decimal operator-(Decimal lhs, Decimal rhs) { return Decimal(lhs.value - rhs.value); }
         friend Decimal operator*(Decimal lhs, Decimal rhs) { return Decimal(Decimal::multiply(lhs.value, rhs.value)); }
         friend Decimal operator/(Decimal lhs, Decimal rhs) { return Decimal(Decimal::divide(lhs.value, rhs.value)); }
-        friend Decimal& operator+=(Decimal& lhs, Decimal rhs) { lhs.value += rhs.value; return lhs; }
-        friend Decimal& operator-=(Decimal& lhs, Decimal rhs) { lhs.value -= rhs.value; return lhs; }
-        friend Decimal& operator*=(Decimal& lhs, Decimal rhs) { lhs.value = Decimal::multiply(lhs.value, rhs.value); return lhs; }
-        friend Decimal& operator/=(Decimal& lhs, Decimal rhs) { lhs.value = Decimal::divide(lhs.value, rhs.value); return lhs; }
+        friend Decimal& operator+=(Decimal lhs, Decimal rhs) { lhs.value += rhs.value; return lhs; }
+        friend Decimal& operator-=(Decimal lhs, Decimal rhs) { lhs.value -= rhs.value; return lhs; }
+        friend Decimal& operator*=(Decimal lhs, Decimal rhs) { lhs.value = Decimal<P>::multiply(lhs.value, rhs.value); return lhs; }
+        friend Decimal& operator/=(Decimal lhs, Decimal rhs) { lhs.value = Decimal<P>::divide(lhs.value, rhs.value); return lhs; }
     };
 
-    // Convert the decimal to a string, respecting sign, radix, and zeros
     template<size_t P>
     std::string Decimal<P>::to_string() const
     {
@@ -97,42 +87,31 @@ namespace decimal
         return result;
     }
 
-    // Proxy to below
     template<size_t P>
-    Decimal<P> Decimal<P>::from_string(const std::string& value)
-    {
-        size_t idx;
-        return Decimal<P>::from_string(value, idx);
-    }
-
-    // Parse a decimal from a string, expect valid input
-    template<size_t P>
-    Decimal<P> Decimal<P>::from_string(const std::string& value, size_t& idx)
+    Decimal Decimal<P>::from_string(const std::string& value)
     {
         std::string buffer = value;
         std::size_t radix { value.find(".") };
         if (radix == std::string::npos)
         {
-            return Decimal<P>(stoll(buffer, &idx) * E(P));
+            return Decimal<P>(stoll(buffer) * E(P));
         }
         else
         {
             buffer.erase(radix, 1);
-            idx += 1;
             if (buffer.size() > radix + P)
             {
                 buffer.erase(radix + P);
-                return Decimal<P>(stoll(buffer, &idx));
+                return Decimal<P>(stoll(buffer));
             }
             else
             {
                 size_t padding { P - (buffer.size() - radix) };
-                return Decimal<P>(stoll(buffer, &idx) * E(padding));
+                return Decimal<P>(stoll(buffer) * E(padding));
             }
         }
     }
 
-    // Multiply two value_type's together, respecting radix and trying to avoid overflow
     template<size_t P>
     value_type Decimal<P>::multiply(value_type lhs, value_type rhs)
     {
@@ -158,7 +137,6 @@ namespace decimal
         return high + middle + low + rounding;
     }
 
-    // Long divide two integers, respecting radix and rounding
     template<size_t P>
     value_type Decimal<P>::divide(value_type lhs, value_type rhs)
     {
