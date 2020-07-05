@@ -37,6 +37,16 @@ TEST_NAMES = (
     "initialize_string_decimal",
     "initialize_string_decimal_short",
     "initialize_string_decimal_long",
+    "initialize_string_decimal_round",
+    "initialize_decimal",
+    "operator_equal",
+    "operator_equal_different_radix",
+    "operator_inequal",
+    "operator_greater",
+    "operator_less",
+    "operator_greater_equal",
+    "operator_less_equal",
+    "operator_plus",
 )
 
 

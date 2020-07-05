@@ -30,13 +30,9 @@ namespace decimal
     class Decimal
     {
     public:
-        constexpr Decimal() : value(0) {}
-        constexpr Decimal(const Decimal& decimal) : value(decimal.value) {}
-
-        // String conversion
-        static Decimal from_string(const std::string& value);
-        static Decimal from_string(const std::string& value, size_t& idx);
-        std::string to_string() const;
+        Decimal() : value(0) {}
+        Decimal(const Decimal& decimal) : value(decimal.value) {}
+        Decimal(const std::string& str) : value(Decimal::value_from_string(str)) {}
 
     private:
         value_type value;
@@ -44,11 +40,20 @@ namespace decimal
         // Direct constructor
         Decimal(value_type value) : value(value) {}
 
+        // Internal deserialization
+        static value_type value_from_string(const std::string& str);
+        static value_type value_from_string(const std::string& str, size_t& index);
+
         // Math
-        static int64_t multiply(value_type lhs, value_type rhs);
-        static int64_t divide(value_type lhs, value_type rhs);
+        static value_type multiply(value_type lhs, value_type rhs);
+        static value_type divide(value_type lhs, value_type rhs);
 
     public:
+        // String conversion
+        std::string to_string() const;
+        static Decimal from_string(const std::string& value);
+        static Decimal from_string(const std::string& value, size_t& index);
+
         // Output
         friend std::string to_string(Decimal decimal) { return decimal.to_string(); }
         friend std::ostream& operator<<(std::ostream &os, Decimal decimal) { return os << decimal.to_string(); }
@@ -58,22 +63,23 @@ namespace decimal
         friend Decimal operator-(Decimal decimal) { return Decimal(-decimal.value); }
 
         // Comparison
-        friend Decimal operator<(Decimal lhs, Decimal rhs) { return lhs.value < rhs.value; }
-        friend Decimal operator>(Decimal lhs, Decimal rhs) { return lhs.value > rhs.value; }
-        friend Decimal operator<=(Decimal lhs, Decimal rhs) { return lhs.value <= rhs.value; }
-        friend Decimal operator>=(Decimal lhs, Decimal rhs) { return lhs.value >= rhs.value; }
-        friend Decimal operator==(Decimal lhs, Decimal rhs) { return lhs.value == rhs.value; }
-        friend Decimal operator!=(Decimal lhs, Decimal rhs) { return lhs.value != rhs.value; }
+        friend bool operator<(Decimal lhs, Decimal rhs) { return lhs.value < rhs.value; }
+        friend bool operator>(Decimal lhs, Decimal rhs) { return lhs.value > rhs.value; }
+        friend bool operator<=(Decimal lhs, Decimal rhs) { return lhs.value <= rhs.value; }
+        friend bool operator>=(Decimal lhs, Decimal rhs) { return lhs.value >= rhs.value; }
+        friend bool operator==(Decimal lhs, Decimal rhs) { return lhs.value == rhs.value; }
+        friend bool operator!=(Decimal lhs, Decimal rhs) { return lhs.value != rhs.value; }
 
         // Arithmetic
         friend Decimal operator+(Decimal lhs, Decimal rhs) { return Decimal(lhs.value + rhs.value); }
         friend Decimal operator-(Decimal lhs, Decimal rhs) { return Decimal(lhs.value - rhs.value); }
         friend Decimal operator*(Decimal lhs, Decimal rhs) { return Decimal(Decimal::multiply(lhs.value, rhs.value)); }
         friend Decimal operator/(Decimal lhs, Decimal rhs) { return Decimal(Decimal::divide(lhs.value, rhs.value)); }
+        friend Decimal operator%(Decimal lhs, Decimal rhs) { return Decimal(lhs.value % rhs.value); }
         friend Decimal& operator+=(Decimal& lhs, Decimal rhs) { lhs.value += rhs.value; return lhs; }
         friend Decimal& operator-=(Decimal& lhs, Decimal rhs) { lhs.value -= rhs.value; return lhs; }
         friend Decimal& operator*=(Decimal& lhs, Decimal rhs) { lhs.value = Decimal::multiply(lhs.value, rhs.value); return lhs; }
-        friend Decimal& operator/=(Decimal& lhs, Decimal rhs) { lhs.value = Decimal::divide(lhs.value, rhs.value); return lhs; }
+        friend Decimal& operator%=(Decimal& lhs, Decimal rhs) { lhs.value %= rhs.value; return lhs; }
     };
 
     // Convert the decimal to a string, respecting sign, radix, and zeros
@@ -99,35 +105,61 @@ namespace decimal
 
     // Proxy to below
     template<size_t P>
-    Decimal<P> Decimal<P>::from_string(const std::string& value)
+    Decimal<P> Decimal<P>::from_string(const std::string& str)
     {
-        size_t idx;
-        return Decimal<P>::from_string(value, idx);
+        size_t index;
+        return Decimal<P>::from_string(str, index);
     }
 
     // Parse a decimal from a string, expect valid input
     template<size_t P>
-    Decimal<P> Decimal<P>::from_string(const std::string& value, size_t& idx)
+    Decimal<P> Decimal<P>::from_string(const std::string& str, size_t& index)
     {
-        std::string buffer = value;
-        std::size_t radix { value.find(".") };
+        return Decimal<P>(Decimal<P>::value_from_string(str, index));
+    }
+
+    template<size_t P>
+    value_type Decimal<P>::value_from_string(const std::string& str)
+    {
+        size_t index;
+        return Decimal<P>::value_from_string(str, index);
+    }
+
+    template<size_t P>
+    value_type Decimal<P>::value_from_string(const std::string& str, size_t& index)
+    {
+        std::string buffer = str;
+        std::size_t radix { buffer.find(".") };
         if (radix == std::string::npos)
         {
-            return Decimal<P>(stoll(buffer, &idx) * E(P));
+            return stoll(buffer, &index) * E(P);
         }
         else
         {
             buffer.erase(radix, 1);
-            idx += 1;
             if (buffer.size() > radix + P)
             {
+                bool rounding = buffer[radix + P] - '0' >= 5;
                 buffer.erase(radix + P);
-                return Decimal<P>(stoll(buffer, &idx));
+                value_type value = stoll(buffer, &index);
+
+                // Increment for radix
+                index += 1;
+
+                // Handle rounding
+                if (rounding)
+                {
+                    value += sign(value);
+                }
+
+                return value;
             }
             else
             {
                 size_t padding { P - (buffer.size() - radix) };
-                return Decimal<P>(stoll(buffer, &idx) * E(padding));
+                value_type value = stoll(buffer, &index) * E(padding);
+                index += 1;
+                return value;
             }
         }
     }
