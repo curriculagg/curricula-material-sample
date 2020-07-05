@@ -29,30 +29,30 @@ def build_decimal_tests(context: Context, resources: dict):
     return result
 
 
-TEST_NAMES = (
-    "initialize_empty",
-    "initialize_string_zero",
-    "initialize_string_integer",
-    "initialize_string_integer_negative",
-    "initialize_string_decimal",
-    "initialize_string_decimal_short",
-    "initialize_string_decimal_long",
-    "initialize_string_decimal_round",
-    "initialize_decimal",
-    "operator_equal",
-    "operator_equal_different_radix",
-    "operator_inequal",
-    "operator_greater",
-    "operator_less",
-    "operator_greater_equal",
-    "operator_less_equal",
-    "operator_plus",
-    "operator_minus",
-    "operator_times",
-    "operator_times_overflow",
-    "operator_times_rounding",
-    "operator_divide",
-    "operator_divide_rounding",
+TESTS = (
+    ("initialize_empty", 1),
+    ("initialize_string_zero", 2),
+    ("initialize_string_integer", 2),
+    ("initialize_string_integer_negative", 2),
+    ("initialize_string_decimal", 2),
+    ("initialize_string_decimal_short", 2),
+    ("initialize_string_decimal_long", 2),
+    ("initialize_string_decimal_round", 2),
+    ("initialize_decimal", 1),
+    ("operator_equal", 2),
+    ("operator_equal_different_radix", 1),
+    ("operator_inequal", 2),
+    ("operator_greater", 2),
+    ("operator_less", 2),
+    ("operator_greater_equal", 1),
+    ("operator_less_equal", 1),
+    ("operator_plus", 2),
+    ("operator_minus", 2),
+    ("operator_times", 3),
+    ("operator_times_overflow", 1),
+    ("operator_times_rounding", 1),
+    ("operator_divide", 3),
+    ("operator_divide_rounding", 1),
 )
 
 
@@ -62,8 +62,12 @@ class ExecutableOutputCodeTest(ExecutableCodeMixin, CompareExitCodeOutputTest):
     expected_code = 0
 
 
-for test_name in TEST_NAMES:
-    grader.test.correctness(name=test_name, passing={"build_decimal_tests"})(ExecutableOutputCodeTest(
+for test_name, test_weight in TESTS:
+    grader.test.correctness(
+        name=test_name,
+        passing={"build_decimal_tests"},
+        weight=test_weight
+    )(ExecutableOutputCodeTest(
         executable_name="decimal_tests",
         args=(test_name,)))
 
