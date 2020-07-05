@@ -14,17 +14,17 @@ GPP_OPTIONS = ("-std=c++14", "-Wall")
 
 
 @grader.setup.check(sanity=True)
-def check_decimal_header(context: Context, resources: dict):
-    header_path = resources["decimal"] = context.problem_path.joinpath("decimal.hpp")
+def check_decimal_header(submission: Submission, resources: dict):
+    header_path = resources["decimal"] = submission.problem_path.joinpath("decimal.hpp")
     return check_file_exists(header_path)
 
 
 @grader.setup.build(sanity=True, passing={"check_decimal_header"})
-def build_decimal_tests(context: Context, resources: dict):
+def build_decimal_tests(submission: Submission, resources: dict):
     result, resources["decimal_tests"] = build_gpp_executable(
         root.joinpath("tests.cpp"),
-        destination_path=context.problem_path.joinpath("tests"),
-        gpp_options=(f"-I{context.problem_path}", f"-I{include}", *GPP_OPTIONS),
+        destination_path=submission.problem_path.joinpath("tests"),
+        gpp_options=(f"-I{submission.problem_path}", f"-I{include}", *GPP_OPTIONS),
         timeout=60)
     return result
 
