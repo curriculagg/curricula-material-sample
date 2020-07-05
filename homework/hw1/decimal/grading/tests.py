@@ -47,6 +47,12 @@ TEST_NAMES = (
     "operator_greater_equal",
     "operator_less_equal",
     "operator_plus",
+    "operator_minus",
+    "operator_times",
+    "operator_times_overflow",
+    "operator_times_rounding",
+    "operator_divide",
+    "operator_divide_rounding",
 )
 
 

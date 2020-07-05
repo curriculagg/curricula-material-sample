@@ -76,9 +76,11 @@ namespace decimal
         friend Decimal operator*(Decimal lhs, Decimal rhs) { return Decimal(Decimal::multiply(lhs.value, rhs.value)); }
         friend Decimal operator/(Decimal lhs, Decimal rhs) { return Decimal(Decimal::divide(lhs.value, rhs.value)); }
         friend Decimal operator%(Decimal lhs, Decimal rhs) { return Decimal(lhs.value % rhs.value); }
+
         friend Decimal& operator+=(Decimal& lhs, Decimal rhs) { lhs.value += rhs.value; return lhs; }
         friend Decimal& operator-=(Decimal& lhs, Decimal rhs) { lhs.value -= rhs.value; return lhs; }
         friend Decimal& operator*=(Decimal& lhs, Decimal rhs) { lhs.value = Decimal::multiply(lhs.value, rhs.value); return lhs; }
+        friend Decimal& operator/=(Decimal& lhs, Decimal rhs) { lhs.value = Decimal::divide(lhs.value, rhs.value); return lhs; }
         friend Decimal& operator%=(Decimal& lhs, Decimal rhs) { lhs.value %= rhs.value; return lhs; }
     };
 
@@ -184,10 +186,12 @@ namespace decimal
         // Low is handled separately for rounding
         const value_type fractional { this_fractional * other_fractional };
         const value_type low { fractional / E_P };
-        const value_type rounding { fractional % E_P / E_PM >= 5 };
+        bool rounding { abs((fractional % E_P) / E_PM) >= 5 };
 
         // Sum
-        return high + middle + low + rounding;
+        value_type value {high + middle + low};
+        value += rounding ? sign(value) : 0;
+        return value;
     }
 
     // Long divide two integers, respecting radix and rounding
@@ -209,7 +213,7 @@ namespace decimal
         }
 
         // Rounding
-        if (abs(remainder * 10) / rhs >= 5)
+        if (abs(remainder * 10 / rhs) >= 5)
         {
             result += sign(lhs) * sign(rhs);
         }
