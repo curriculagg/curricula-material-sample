@@ -14,14 +14,15 @@
     {
       "path": "decimal",
       "grading": {
-        "weight": "20"
+        "weight": "20",
+        "enabled": false
       }
     },
     {
       "path": "arithmetic",
       "grading": {
         "weight": "40",
-        "enabled": false
+        "enabled": true
       }
     },
     {
