@@ -1,3 +1,6 @@
+#ifndef DECIMAL_HPP
+#define DECIMAL_HPP
+
 #include <string>
 #include <iostream>
 #include <cstdint>
@@ -163,3 +166,5 @@ namespace decimal
         return result;
     }
 }
+
+#endif

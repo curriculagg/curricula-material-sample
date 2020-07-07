@@ -1,3 +1,4 @@
 #include <string>
+#include "decimal.hpp"
 
-float evaluate(const std::string& input);
+decimal::Decimal<4> evaluate(const std::string& input);

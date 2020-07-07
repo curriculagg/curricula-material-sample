@@ -6,6 +6,7 @@
 #include <stdexcept>
 
 using namespace std;
+using namespace decimal;
 
 struct Token
 {
@@ -21,11 +22,11 @@ struct Token
     };
 
     Kind kind;
-    float value;
+    Decimal<4> value;
     int precedence;
     bool binary;
 
-    inline float apply(const Token& left, const Token& right)
+    inline Decimal<4> apply(const Token& left, const Token& right)
     {
         switch (this->kind)
         {
@@ -36,7 +37,7 @@ struct Token
         case Token::Kind::times:
             return left.value * right.value;
         case Token::Kind::divide:
-            if (right.value == 0)
+            if (right.value == Decimal<4>())
             {
                 throw logic_error("divide by zero");
             }
@@ -77,14 +78,14 @@ struct Token
         }
     }
 
-    static Token from(Kind kind, float value)
+    static Token from(Kind kind, Decimal<4> value)
     {
         return Token { kind, value, Token::get_precedence(kind), Token::is_binary(kind) };
     }
 
     static Token from(Kind kind)
     {
-        return Token::from(kind, 0);
+        return Token::from(kind, Decimal<4>());
     }
 };
 
@@ -119,8 +120,8 @@ token_vector tokenize(const string& input)
             tokens.push_back(Token::from(static_cast<Token::Kind>(*it++)));
             break;
         default:
-            size_t length;
-            float value = stof(input.substr(distance(input.begin(), it)), &length);
+            size_t length {0};
+            Decimal<4> value = Decimal<4>::from_string(input.substr(distance(input.begin(), it)), length);
             tokens.push_back(Token::from(Token::Kind::number, value));
             advance(it, length);
             break;
@@ -176,7 +177,7 @@ Token parse_expression(token_iterator& it, token_iterator end)
     return parse_expression(it, end, parse_primary(it, end), 0);
 }
 
-float evaluate(const string& input)
+Decimal<4> evaluate(const string& input)
 {
     vector<Token> tokens = tokenize(input);
     token_iterator cursor = tokens.cbegin();

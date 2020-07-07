@@ -1,3 +1,6 @@
+#ifndef DECIMAL_HPP
+#define DECIMAL_HPP
+
 #include <string>
 #include <iostream>
 #include <cstdint>
@@ -130,40 +133,35 @@ namespace decimal
     template<size_t P>
     value_type Decimal<P>::value_from_string(const std::string& str, size_t& index)
     {
-        std::string buffer = str;
-        std::size_t radix { buffer.find(".") };
-        if (radix == std::string::npos)
+        value_type value { stoll(str, &index) * E(P) };
+        if (str.length() > index + 2 && str[index++] == '.' && isdigit(str[index]))
         {
-            return stoll(buffer, &index) * E(P);
-        }
-        else
-        {
-            buffer.erase(radix, 1);
-            if (buffer.size() > radix + P)
+            std::string buffer = str.substr(index);
+            if (buffer.length() > P + 1)
             {
-                bool rounding = buffer[radix + P] - '0' >= 5;
-                buffer.erase(radix + P);
-                value_type value = stoll(buffer, &index);
+                buffer.erase(P + 1);
+            }
 
-                // Increment for radix
-                index += 1;
-
-                // Handle rounding
-                if (rounding)
+            size_t fractional_index {};
+            value_type fractional = stoll(buffer, &fractional_index);
+            value_type rounding {};
+            if (fractional_index > P)
+            {
+                value_type EFP = E(fractional_index - P);
+                value_type EFPM = E(fractional_index - P - 1);
+                if (fractional % EFP / EFPM >= 5)
                 {
-                    value += sign(value);
+                    rounding = sign(value);
                 }
-
-                return value;
+                fractional /= EFP;
             }
-            else
+            else if (fractional_index < P)
             {
-                size_t padding { P - (buffer.size() - radix) };
-                value_type value = stoll(buffer, &index) * E(padding);
-                index += 1;
-                return value;
+                fractional *= E(P - fractional_index);
             }
+            value += fractional + rounding;
         }
+        return value;
     }
 
     // Multiply two value_type's together, respecting radix and trying to avoid overflow
@@ -221,3 +219,5 @@ namespace decimal
         return result;
     }
 }
+
+#endif
