@@ -15,7 +15,7 @@ namespace decimal
     // Determine the sign of a given value in terms of -1, 0, and 1
     inline int8_t sign(value_type value)
     {
-        return (0 < value) - (value < 0);
+        return value < 0 ? -1 : 1;
     }
 
     // Raise 10 to the n
@@ -44,8 +44,9 @@ namespace decimal
         Decimal(value_type value) : value(value) {}
 
         // Internal deserialization
+        class Parser;
         static value_type value_from_string(const std::string& str);
-        static value_type value_from_string(const std::string& str, size_t& index);
+        static value_type value_from_string(std::string str, size_t& index);
 
         // Math
         static value_type multiply(value_type lhs, value_type rhs);
@@ -131,36 +132,39 @@ namespace decimal
     }
 
     template<size_t P>
-    value_type Decimal<P>::value_from_string(const std::string& str, size_t& index)
+    value_type Decimal<P>::value_from_string(std::string str, size_t& index)
     {
-        value_type value { stoll(str, &index) * E(P) };
-        if (str.length() > index + 2 && str[index++] == '.' && isdigit(str[index]))
+        size_t radix = str.find('.');
+        if (radix != std::string::npos)
         {
-            std::string buffer = str.substr(index);
-            if (buffer.length() > P + 1)
+            str.erase(radix, 1);
+            if (str.length() > radix + P + 1)
             {
-                buffer.erase(P + 1);
+                str.erase(radix + P + 1);
             }
-
-            size_t fractional_index {};
-            value_type fractional = stoll(buffer, &fractional_index);
-            value_type rounding {};
-            if (fractional_index > P)
-            {
-                value_type EFP = E(fractional_index - P);
-                value_type EFPM = E(fractional_index - P - 1);
-                if (fractional % EFP / EFPM >= 5)
-                {
-                    rounding = sign(value);
-                }
-                fractional /= EFP;
-            }
-            else if (fractional_index < P)
-            {
-                fractional *= E(P - fractional_index);
-            }
-            value += fractional + rounding;
         }
+
+        size_t idx {};
+        value_type value = stoll(str, &idx);
+
+        index = idx;
+        if (radix != std::string::npos && index > radix)
+        {
+            if (index > radix + P)
+            {
+                value_type rounding = abs(value) % 10 >= 5;
+                value = value / 10 + sign(value) * rounding;
+            }
+            else if (index < radix + P)
+            {
+                value = value * E(radix + P - index);
+            }
+           index++;
+        } else {
+            constexpr value_type EP = E(P);
+            value *= EP;
+        }
+
         return value;
     }
 

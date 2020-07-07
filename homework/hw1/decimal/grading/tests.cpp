@@ -15,7 +15,7 @@ TEST(initialize_empty)
 TEST(initialize_string_zero)
 {
     Decimal<4> b = Decimal<4>("0");
-    FAIL;
+    PASS;
 }
 
 TEST(initialize_string_integer)

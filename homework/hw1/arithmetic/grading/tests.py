@@ -74,8 +74,7 @@ class ArithmeticTest(ExecutableMixin, CompareBytesOutputTest):
     @classmethod
     def load(cls, string: str):
         for test_name, test_lines in cls.parse(string):
-            # grader.test.correctness(name=test_name, passing={"build_arithmetic"})(ArithmeticTest(test_lines))
-            pass
+            grader.test.correctness(name=test_name, passing={"build_arithmetic"})(ArithmeticTest(test_lines))
 
     @classmethod
     def parse(cls, string: str) -> Iterator[Tuple[str, List[Tuple[bytes, bytes]]]]:

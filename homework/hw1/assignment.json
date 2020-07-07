@@ -15,7 +15,7 @@
       "path": "decimal",
       "grading": {
         "weight": "20",
-        "enabled": false
+        "enabled": true
       }
     },
     {
