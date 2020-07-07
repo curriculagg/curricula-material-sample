@@ -104,7 +104,7 @@ typedef vector<Token>::const_iterator token_iterator;
 token_vector tokenize(const string& input)
 {
     vector<Token> tokens;
-    string::const_iterator it = input.cbegin();
+    string::const_iterator it { input.cbegin() };
     consume_whitespace(it, input.cend());
 
     while (it != input.cend())
@@ -120,7 +120,7 @@ token_vector tokenize(const string& input)
             tokens.push_back(Token::from(static_cast<Token::Kind>(*it++)));
             break;
         default:
-            size_t length {0};
+            size_t length { };
             Decimal<4> value = Decimal<4>::from_string(input.substr(distance(input.begin(), it)), length);
             tokens.push_back(Token::from(Token::Kind::number, value));
             advance(it, length);
@@ -161,8 +161,8 @@ Token parse_expression(token_iterator& it, token_iterator end, Token left, int m
 {
     while (it != end && it->binary && it->precedence >= minimum_precedence)
     {
-        Token operation = *it++;
-        Token right = parse_primary(it, end);
+        Token operation { *it++ };
+        Token right { parse_primary(it, end) };
         while (it != end && it->binary && it->precedence > operation.precedence)
         {
             right = parse_expression(it, end, right, it->precedence);
@@ -179,7 +179,7 @@ Token parse_expression(token_iterator& it, token_iterator end)
 
 Decimal<4> evaluate(const string& input)
 {
-    vector<Token> tokens = tokenize(input);
-    token_iterator cursor = tokens.cbegin();
+    vector<Token> tokens { tokenize(input) };
+    token_iterator cursor { tokens.cbegin() };
     return parse_expression(cursor, tokens.cend()).value;
 }
