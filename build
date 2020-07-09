@@ -1,0 +1,3 @@
+#!/bin/bash
+
+./curricula -vvv compile homework/hw1 --template template --site ../curricula-web-content/assignments/
