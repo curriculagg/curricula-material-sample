@@ -20,6 +20,8 @@ We recommend you use an [operator precedence parser](https://en.wikipedia.org/wi
 We also recommended that you tokenize the input prior to parsing, as it will separate your code into more manageable pieces.
 Optionally, we suggest that you use iterators to consume tokens from the input.
 
+- [ ] Skim operator precedence parsing
+
 ### Tokenization
 
 Tokenization for our arithmetic parser should be fairly straightforward.
@@ -28,6 +30,12 @@ While all of the symbols, `+-*/()` will have their own `Kind`, all numeric token
 
 Skipping whitespace and consuming single character tokens should be no problem. 
 For decimals, we recommend you use the static helper `Decimal<P>::from_string` you already implemented.
+
+- [ ] Finish `enum class Kind`
+- [ ] Create a `Token` struct with `Kind kind` and `decimal_type`
+- [ ] Write a tokenizer that takes a string and returns some collection of tokens
+    - [ ] Implement single character token parsing
+    - [ ] Use `decimal_type::from_string` to implement decimal parsing
 
 ### Parsing
 
@@ -73,6 +81,8 @@ parse_primary(tokens)
         return token
 ```
 
+- [ ] Implement `parse_primary` however you see fit
+
 #### Expressions
 
 Once this is done, we can implement the aforementioned `parse_expression`.
@@ -89,9 +99,18 @@ parse_expression(tokens, lhs, minimum precedence)
                 or a right-associative operator whose precedence is equal to operator's
             rhs = parse_expression(tokens, rhs, lookahead's precedence)
             lookahead = peek next token
-        lhs = the result of applying op with operands lhs and rhs
+        lhs = the result of applying operator with operands lhs and rhs
     return lhs
 ```
+
+Note that this implementation associates a precedence with operators.
+For us, it is sufficient for `+` and `-` to have precedence 1 and `*` and `/` to have precedence 2, with the default precedence being 0.
+
+- [ ] Add a `int precedence` and `bool is_binary` to `Token`
+- [ ] Write a method that applies a binary operator to two `Token`s and returns a `Token`
+- [ ] Implement `parse_expression` with pseudocode arguments
+- [ ] Add an overload of `parse_expression` that only takes the tokens for convenience
+- [ ] Use `parse_expression` in `evaluate`
 
 Good luck!
 

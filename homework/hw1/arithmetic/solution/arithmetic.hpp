@@ -1,4 +1,6 @@
 #include <string>
 #include "decimal.hpp"
 
-decimal::Decimal<4> evaluate(const std::string& input);
+typedef decimal::Decimal<4> decimal_type;
+
+decimal_type evaluate(const std::string& input);

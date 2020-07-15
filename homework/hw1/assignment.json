@@ -14,22 +14,15 @@
     {
       "path": "decimal",
       "grading": {
-        "weight": "20",
+        "weight": "40",
         "enabled": true
       }
     },
     {
       "path": "arithmetic",
       "grading": {
-        "weight": "40",
+        "weight": "60",
         "enabled": true
-      }
-    },
-    {
-      "path": "banking",
-      "grading": {
-        "weight": "40",
-        "enabled": false
       }
     }
   ],

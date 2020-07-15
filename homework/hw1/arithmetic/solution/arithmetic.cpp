@@ -6,7 +6,6 @@
 #include <stdexcept>
 
 using namespace std;
-using namespace decimal;
 
 struct Token
 {
@@ -22,11 +21,11 @@ struct Token
     };
 
     Kind kind;
-    Decimal<4> value;
+    decimal_type value;
     int precedence;
-    bool binary;
+    bool is_binary;
 
-    inline Decimal<4> apply(const Token& left, const Token& right)
+    inline decimal_type apply(const Token& left, const Token& right)
     {
         switch (this->kind)
         {
@@ -37,7 +36,7 @@ struct Token
         case Token::Kind::times:
             return left.value * right.value;
         case Token::Kind::divide:
-            if (right.value == Decimal<4>())
+            if (right.value == decimal_type())
             {
                 throw logic_error("divide by zero");
             }
@@ -64,7 +63,7 @@ struct Token
         }
     }
 
-    static bool is_binary(Kind kind)
+    static bool get_is_binary(Kind kind)
     {
         switch (kind)
         {
@@ -78,14 +77,14 @@ struct Token
         }
     }
 
-    static Token from(Kind kind, Decimal<4> value)
+    static Token from(Kind kind, decimal_type value)
     {
-        return Token { kind, value, Token::get_precedence(kind), Token::is_binary(kind) };
+        return Token { kind, value, Token::get_precedence(kind), Token::get_is_binary(kind) };
     }
 
     static Token from(Kind kind)
     {
-        return Token::from(kind, Decimal<4>());
+        return Token::from(kind, decimal_type());
     }
 };
 
@@ -121,7 +120,7 @@ token_vector tokenize(const string& input)
             break;
         default:
             size_t length { };
-            Decimal<4> value = Decimal<4>::from_string(input.substr(distance(input.begin(), it)), length);
+            decimal_type value = decimal_type::from_string(input.substr(distance(input.begin(), it)), length);
             tokens.push_back(Token::from(Token::Kind::number, value));
             advance(it, length);
             break;
@@ -159,11 +158,11 @@ Token parse_primary(token_iterator& it, token_iterator end)
 
 Token parse_expression(token_iterator& it, token_iterator end, Token left, int minimum_precedence)
 {
-    while (it != end && it->binary && it->precedence >= minimum_precedence)
+    while (it != end && it->is_binary && it->precedence >= minimum_precedence)
     {
         Token operation { *it++ };
         Token right { parse_primary(it, end) };
-        while (it != end && it->binary && it->precedence > operation.precedence)
+        while (it != end && it->is_binary && it->precedence > operation.precedence)
         {
             right = parse_expression(it, end, right, it->precedence);
         }
@@ -177,7 +176,7 @@ Token parse_expression(token_iterator& it, token_iterator end)
     return parse_expression(it, end, parse_primary(it, end), 0);
 }
 
-Decimal<4> evaluate(const string& input)
+decimal_type evaluate(const string& input)
 {
     vector<Token> tokens { tokenize(input) };
     token_iterator cursor { tokens.cbegin() };

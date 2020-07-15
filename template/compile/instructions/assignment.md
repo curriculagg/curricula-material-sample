@@ -1,6 +1,8 @@
 ---
-layout: default
+layout: asides
 title: CSCI 104 - [[ assignment.title ]]
+toc: true
+tasks: true
 ---
 
 # [[ assignment.title ]]
