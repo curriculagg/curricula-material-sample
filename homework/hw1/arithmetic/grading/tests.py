@@ -5,7 +5,7 @@ from curricula.grade.test.correctness.common import ExecutableMixin, CompareByte
 from curricula.library.files import delete_file
 
 from pathlib import Path
-from typing import Iterable, Tuple, Iterator, List
+from typing import Iterable, Tuple, Iterator, List, Set
 
 root = Path(__file__).absolute().parent
 grader = Grader()
@@ -13,25 +13,25 @@ grader = Grader()
 GPP_OPTIONS = ("-std=c++14", "-Wall")
 
 
-@grader.setup.check(sanity=True)
+@grader.setup.check(tags={"sanity"})
 def check_arithmetic_header(submission: Submission, resources: dict):
     arithmetic_header_path = resources["arithmetic_header_path"] = submission.problem_path.joinpath("arithmetic.hpp")
     return check_file_exists(arithmetic_header_path)
 
 
-@grader.setup.check(sanity=True)
+@grader.setup.check(tags={"sanity"})
 def check_arithmetic_source(submission: Submission, resources: dict):
     arithmetic_source_path = resources["arithmetic_source_path"] = submission.problem_path.joinpath("arithmetic.cpp")
     return check_file_exists(arithmetic_source_path)
 
 
-@grader.setup.check(sanity=True)
+@grader.setup.check(tags={"sanity"})
 def check_main_source(submission: Submission, resources: dict):
     main_source_path = resources["main_source_path"] = submission.problem_path.joinpath("main.cpp")
     return check_file_exists(main_source_path)
 
 
-@grader.setup.check(sanity=True)
+@grader.setup.check(tags={"sanity"})
 def check_decimal_header(submission: Submission, resources: dict):
     decimal_problem = next(filter(lambda p: p.short == "decimal", grader.problem.assignment.problems))
     path = resources["decimal_include_path"] = submission.assignment_path.joinpath(decimal_problem.relative_path)
@@ -41,7 +41,7 @@ def check_decimal_header(submission: Submission, resources: dict):
 checks = {"check_arithmetic_header", "check_arithmetic_source", "check_main_source", "check_decimal_header"}
 
 
-@grader.setup.build(sanity=True, passing=checks)
+@grader.setup.build(tags={"sanity"}, passing=checks)
 def build_arithmetic(
         arithmetic_source_path: Path,
         main_source_path: Path,
@@ -73,36 +73,43 @@ class ArithmeticTest(ExecutableMixin, CompareBytesOutputTest):
 
     @classmethod
     def load(cls, string: str):
-        for test_name, test_lines in cls.parse(string):
-            grader.test.correctness(name=test_name, passing={"build_arithmetic"})(ArithmeticTest(test_lines))
+        for test_name, test_tags, test_lines in cls.parse(string):
+            grader.test.correctness(
+                name=test_name,
+                tags=test_tags,
+                passing={"build_arithmetic"}
+            )(ArithmeticTest(test_lines))
 
     @classmethod
-    def parse(cls, string: str) -> Iterator[Tuple[str, List[Tuple[bytes, bytes]]]]:
+    def parse(cls, string: str) -> Iterator[Tuple[str, Set[str], List[Tuple[bytes, bytes]]]]:
         test_name = None
+        test_tags = False
         test_lines = []
         for line in string.strip().splitlines():
             if len(line.strip()) == 0:
                 continue
             if not line[0].isspace():
                 if test_name is not None:
-                    yield test_name, test_lines
+                    yield test_name, test_tags, test_lines
                     test_lines = []
-                test_name = line.strip()
+                line_items = line.strip().split()
+                test_name = line_items[0]
+                test_tags = set(line_items[1:])
             else:
                 equation, expected = line.split("=")
                 test_lines.append((equation.encode().strip(), expected.encode().strip()))
-        yield test_name, test_lines
+        yield test_name, test_tags, test_lines
 
 
 ArithmeticTest.load("""
-zero
+zero sanity
     0 = 0.0000
 
 zero_twice
     0 = 0.0000
     0 = 0.0000
 
-value
+value sanity
     123 = 123.0000
     3.333 = 3.3330
 
@@ -122,7 +129,7 @@ value_paren_nested
     ((100)) = 100.0000
     ((((-1)))) = -1.0000
 
-addition_basic
+addition_basic sanity
     1 + 1 = 2.0000
     10 + 20 = 30.0000
 

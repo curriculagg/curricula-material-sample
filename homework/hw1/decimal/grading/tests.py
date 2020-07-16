@@ -13,13 +13,13 @@ grader = Grader()
 GPP_OPTIONS = ("-std=c++14", "-Wall")
 
 
-@grader.setup.check(sanity=True)
+@grader.setup.check(tags={"sanity"})
 def check_decimal_header(submission: Submission, resources: dict):
     header_path = resources["decimal"] = submission.problem_path.joinpath("decimal.hpp")
     return check_file_exists(header_path)
 
 
-@grader.setup.build(sanity=True, passing={"check_decimal_header"})
+@grader.setup.build(tags={"sanity"}, passing={"check_decimal_header"})
 def build_decimal_tests(submission: Submission, resources: dict):
     result, resources["decimal_tests"] = build_gpp_executable(
         root.joinpath("tests.cpp"),
@@ -30,11 +30,11 @@ def build_decimal_tests(submission: Submission, resources: dict):
 
 
 TESTS = (
-    ("initialize_empty", 1),
-    ("initialize_string_zero", 2),
-    ("initialize_string_integer", 2),
+    ("initialize_empty", 1, "sanity"),
+    ("initialize_string_zero", 2, "sanity"),
+    ("initialize_string_integer", 2, "sanity"),
     ("initialize_string_integer_negative", 2),
-    ("initialize_string_decimal", 2),
+    ("initialize_string_decimal", 2, "sanity"),
     ("initialize_string_decimal_short", 2),
     ("initialize_string_decimal_long", 2),
     ("initialize_string_decimal_round", 2),
@@ -62,10 +62,11 @@ class ExecutableOutputCodeTest(ExecutableCodeMixin, CompareExitCodeOutputTest):
     expected_code = 0
 
 
-for test_name, test_weight in TESTS:
+for test_name, test_weight, *rest in TESTS:
     grader.test.correctness(
         name=test_name,
         passing={"build_decimal_tests"},
+        tags=set(rest),
         weight=test_weight
     )(ExecutableOutputCodeTest(
         executable_name="decimal_tests",
