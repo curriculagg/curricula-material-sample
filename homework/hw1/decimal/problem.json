@@ -18,7 +18,8 @@
       "weight": "80"
     },
     "review": {
-      "weight": "20"
+      "weight": "20",
+      "points": "20"
     },
     "manual": null
   }
