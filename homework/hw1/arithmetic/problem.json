@@ -15,7 +15,8 @@
   "grading": {
     "points": 100,
     "automated": {
-      "weight": "9"
+      "weight": "9",
+      "points": "90"
     },
     "review": {
       "weight": "1",
