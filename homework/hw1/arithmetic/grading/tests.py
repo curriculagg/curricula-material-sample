@@ -15,24 +15,32 @@ GPP_OPTIONS = ("-std=c++14", "-Wall")
 
 @grader.setup.check(tags={"sanity"})
 def check_arithmetic_header(submission: Submission, resources: dict):
+    """arithmetic.hpp present in arithmetic/"""
+
     arithmetic_header_path = resources["arithmetic_header_path"] = submission.problem_path.joinpath("arithmetic.hpp")
     return check_file_exists(arithmetic_header_path)
 
 
 @grader.setup.check(tags={"sanity"})
 def check_arithmetic_source(submission: Submission, resources: dict):
+    """arithmetic.cpp present in arithmetic/"""
+
     arithmetic_source_path = resources["arithmetic_source_path"] = submission.problem_path.joinpath("arithmetic.cpp")
     return check_file_exists(arithmetic_source_path)
 
 
 @grader.setup.check(tags={"sanity"})
 def check_main_source(submission: Submission, resources: dict):
+    """main.cpp present in arithmetic/"""
+
     main_source_path = resources["main_source_path"] = submission.problem_path.joinpath("main.cpp")
     return check_file_exists(main_source_path)
 
 
 @grader.setup.check(tags={"sanity"})
 def check_decimal_header(submission: Submission, resources: dict):
+    """decimal.hpp present in decimal/"""
+
     decimal_problem = next(filter(lambda p: p.short == "decimal", grader.problem.assignment.problems))
     path = resources["decimal_include_path"] = submission.assignment_path.joinpath(decimal_problem.relative_path)
     return check_file_exists(path.joinpath("decimal.hpp"))
@@ -48,6 +56,8 @@ def build_arithmetic(
         decimal_include_path: Path,
         submission: Submission,
         resources: dict):
+    """main.cpp compiles"""
+
     result, resources["arithmetic"] = build_gpp_executable(
         arithmetic_source_path,
         main_source_path,
@@ -58,7 +68,7 @@ def build_arithmetic(
 
 
 class ArithmeticTest(ExecutableMixin, CompareBytesOutputTest):
-    """Run executable and check output."""
+    """Check that expressions evaluate correctly"""
 
     def __init__(self, lines: Iterable[Tuple[bytes, bytes]]):
         equations = b"".join(line[0] + b"\n" for line in lines)
@@ -73,36 +83,42 @@ class ArithmeticTest(ExecutableMixin, CompareBytesOutputTest):
 
     @classmethod
     def load(cls, string: str):
-        for test_name, test_tags, test_lines in cls.parse(string):
+        for test_name, test_description, test_tags, test_lines in cls.parse(string):
             grader.test.correctness(
                 name=test_name,
                 tags=test_tags,
+                description=test_description,
                 passing={"build_arithmetic"}
             )(ArithmeticTest(test_lines))
 
     @classmethod
-    def parse(cls, string: str) -> Iterator[Tuple[str, Set[str], List[Tuple[bytes, bytes]]]]:
+    def parse(cls, string: str) -> Iterator[Tuple[str, str, Set[str], List[Tuple[bytes, bytes]]]]:
         test_name = None
-        test_tags = False
+        test_description = None
+        test_tags = set()
         test_lines = []
         for line in string.strip().splitlines():
             if len(line.strip()) == 0:
                 continue
             if not line[0].isspace():
                 if test_name is not None:
-                    yield test_name, test_tags, test_lines
+                    yield test_name, test_description, test_tags, test_lines
+                    test_description = None
                     test_lines = []
                 line_items = line.strip().split()
                 test_name = line_items[0]
                 test_tags = set(line_items[1:])
+            elif line.strip().startswith("#"):
+                test_description = line.strip()[1:].strip()
             else:
                 equation, expected = line.split("=")
                 test_lines.append((equation.encode().strip(), expected.encode().strip()))
-        yield test_name, test_tags, test_lines
+        yield test_name, test_description, test_tags, test_lines
 
 
 ArithmeticTest.load("""
 zero sanity
+    # Zero equals zero
     0 = 0.0000
 
 zero_twice
@@ -110,6 +126,7 @@ zero_twice
     0 = 0.0000
 
 value sanity
+    # Values are stored correctly
     123 = 123.0000
     3.333 = 3.3330
 
@@ -130,6 +147,7 @@ value_paren_nested
     ((((-1)))) = -1.0000
 
 addition_basic sanity
+    # Simple addition behaves as expected
     1 + 1 = 2.0000
     10 + 20 = 30.0000
 

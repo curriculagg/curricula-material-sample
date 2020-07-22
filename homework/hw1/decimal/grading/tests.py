@@ -15,12 +15,16 @@ GPP_OPTIONS = ("-std=c++14", "-Wall")
 
 @grader.setup.check(tags={"sanity"})
 def check_decimal_header(submission: Submission, resources: dict):
+    """decimal.hpp present in decimal/"""
+
     header_path = resources["decimal"] = submission.problem_path.joinpath("decimal.hpp")
     return check_file_exists(header_path)
 
 
 @grader.setup.build(tags={"sanity"}, passing={"check_decimal_header"})
 def build_decimal_tests(submission: Submission, resources: dict):
+    """our decimal test harness builds with decimal.hpp"""
+
     result, resources["decimal_tests"] = build_gpp_executable(
         root.joinpath("tests.cpp"),
         destination_path=submission.problem_path.joinpath("tests"),
@@ -30,11 +34,11 @@ def build_decimal_tests(submission: Submission, resources: dict):
 
 
 TESTS = (
-    ("initialize_empty", 1, "sanity"),
-    ("initialize_string_zero", 2, "sanity"),
-    ("initialize_string_integer", 2, "sanity"),
+    ("initialize_empty", 1, "empty decimal initialization works", {"sanity"}),
+    ("initialize_string_zero", 2, "decimal initializes \"0\" correctly", {"sanity"}),
+    ("initialize_string_integer", 2, "decimal initializes with integer strings correctly", {"sanity"}),
     ("initialize_string_integer_negative", 2),
-    ("initialize_string_decimal", 2, "sanity"),
+    ("initialize_string_decimal", 2, "decimal initializes with decimal strings correctly", {"sanity"}),
     ("initialize_string_decimal_short", 2),
     ("initialize_string_decimal_long", 2),
     ("initialize_string_decimal_round", 2),
@@ -66,7 +70,8 @@ for test_name, test_weight, *rest in TESTS:
     grader.test.correctness(
         name=test_name,
         passing={"build_decimal_tests"},
-        tags=set(rest),
+        description=rest[0] if len(rest) >= 1 else None,
+        tags=rest[1] if len(rest) >= 2 else set(),
         weight=test_weight
     )(ExecutableOutputCodeTest(
         executable_name="decimal_tests",
