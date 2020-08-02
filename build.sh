@@ -1,6 +1,6 @@
 #!/bin/bash
 
-./curricula -vvv compile homework/hw1 \
+./curricula -vvv compile $1 \
   --template template \
   --site ../curricula-web-content/assignments/ \
-  --grade $@
+  --grade "${@:2}"
