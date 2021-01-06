@@ -1,8 +1,8 @@
-from curricula.grade.shortcuts import *
-from curricula.grade.setup.check.common import check_file_exists
-from curricula.grade.setup.build.common import build_gpp_executable
-from curricula.grade.test.correctness.common import ExecutableCodeMixin, CompareExitCodeOutputTest
-from curricula.grade import include
+from curricula_grade.shortcuts import *
+from curricula_grade.setup.common import check_file_exists
+from curricula_grade.test.correctness.common import ProcessCompareExitCodeTest
+from curricula_grade_cpp import Paths
+from curricula_grade_cpp.setup.common import gpp_compile_object
 from curricula.library.files import delete_file
 
 from pathlib import Path
@@ -13,22 +13,22 @@ grader = Grader()
 GPP_OPTIONS = ("-std=c++14", "-Wall")
 
 
-@grader.setup.check(tags={"sanity"})
-def check_decimal_header(submission: Submission, resources: dict):
+@grader.register(tags={"sanity"})
+def check_decimal_header(submission: Submission, resources: dict) -> SetupResult:
     """decimal.hpp present in decimal/"""
 
     header_path = resources["decimal"] = submission.problem_path.joinpath("decimal.hpp")
     return check_file_exists(header_path)
 
 
-@grader.setup.build(tags={"sanity"}, passing={"check_decimal_header"})
-def build_decimal_tests(submission: Submission, resources: dict):
+@grader.register(tags={"sanity"}, passing={"check_decimal_header"})
+def build_decimal_tests(submission: Submission, resources: dict) -> SetupResult:
     """our decimal test harness builds with decimal.hpp"""
 
-    result, resources["decimal_tests"] = build_gpp_executable(
+    result, resources["decimal_tests"] = gpp_compile_object(
         root.joinpath("tests.cpp"),
         destination_path=submission.problem_path.joinpath("tests"),
-        gpp_options=(f"-I{submission.problem_path}", f"-I{include}", *GPP_OPTIONS),
+        gpp_options=(f"-I{submission.problem_path}", f"-I{Paths.INCLUDE}", *GPP_OPTIONS),
         timeout=60)
     return result
 
@@ -60,14 +60,14 @@ TESTS = (
 )
 
 
-class ExecutableOutputCodeTest(ExecutableCodeMixin, CompareExitCodeOutputTest):
+class ExecutableOutputCodeTest(ProcessCompareExitCodeTest):
     """Run executable and check output."""
 
     expected_code = 0
 
 
 for test_name, test_weight, *rest in TESTS:
-    grader.test.correctness(
+    grader.register(
         name=test_name,
         passing={"build_decimal_tests"},
         description=rest[0] if len(rest) >= 1 else None,
@@ -78,6 +78,7 @@ for test_name, test_weight, *rest in TESTS:
         args=(test_name,)))
 
 
-@grader.teardown.cleanup(passing={"build_decimal_tests"})
-def cleanup_decimal_tests(decimal_tests: ExecutableFile):
+@grader.register(passing={"build_decimal_tests"})
+def cleanup_decimal_tests(decimal_tests: ExecutableFile) -> CleanupResult:
     delete_file(decimal_tests.path)
+    return CleanupResult()

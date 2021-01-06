@@ -13,7 +13,7 @@
     "trees"
   ],
   "grading": {
-    "points": 100,
+    "points": "100",
     "automated": {
       "weight": "9",
       "points": "90"

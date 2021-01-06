@@ -1,18 +1,21 @@
 #!/bin/bash
 
-# Respect development environment
+function use_local() {
+  if [ -d "$1" ]; then
+    echo "using local $1"
+    export PYTHONPATH="$1":$PYTHONPATH
+  fi
+}
+
 ORIGINAL_PYTHONPATH=$PYTHONPATH
-if [ -d ../curricula-shell ]; then
-  echo "using local curricula-shell"
-  export PYTHONPATH=../curricula-shell:$PYTHONPATH
-fi
-if [ -d ../curricula ]; then
-  echo "using local curricula"
-  export PYTHONPATH=../curricula:$PYTHONPATH
-fi
+
+use_local ../curricula
+use_local ../curricula-grade
+use_local ../curricula-grade-cpp
+use_local ../curricula-compile
 
 # Mirror commands
-python3.7 -m curricula_shell "$@"
+python3.9 -m curricula "$@"
 
 # Fix path after
 export PYTHONPATH=$ORIGINAL_PYTHONPATH

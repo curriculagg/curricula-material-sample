@@ -1,7 +1,8 @@
-from curricula.grade.shortcuts import *
-from curricula.grade.setup.check.common import check_file_exists
-from curricula.grade.setup.build.common import build_gpp_executable
-from curricula.grade.test.correctness.common import ExecutableMixin, CompareBytesOutputTest
+from curricula_grade.shortcuts import *
+
+from curricula_grade.setup.common import check_file_exists
+from curricula_grade_cpp.setup.common import gpp_compile_object
+from curricula_grade.test.correctness.common import ProcessCompareStreamTest
 from curricula.library.files import delete_file
 
 from pathlib import Path
@@ -13,33 +14,33 @@ grader = Grader()
 GPP_OPTIONS = ("-std=c++14", "-Wall")
 
 
-@grader.setup.check(tags={"sanity"})
-def check_arithmetic_header(submission: Submission, resources: dict):
+@grader.register(tags={"sanity"})
+def check_arithmetic_header(submission: Submission, resources: dict) -> SetupResult:
     """arithmetic.hpp present in arithmetic/"""
 
     arithmetic_header_path = resources["arithmetic_header_path"] = submission.problem_path.joinpath("arithmetic.hpp")
     return check_file_exists(arithmetic_header_path)
 
 
-@grader.setup.check(tags={"sanity"})
-def check_arithmetic_source(submission: Submission, resources: dict):
+@grader.register(tags={"sanity"})
+def check_arithmetic_source(submission: Submission, resources: dict) -> SetupResult:
     """arithmetic.cpp present in arithmetic/"""
 
     arithmetic_source_path = resources["arithmetic_source_path"] = submission.problem_path.joinpath("arithmetic.cpp")
     return check_file_exists(arithmetic_source_path)
 
 
-@grader.setup.check(tags={"sanity"})
-def check_main_source(submission: Submission, resources: dict):
+@grader.register(tags={"sanity"})
+def check_main_source(submission: Submission, resources: dict) -> SetupResult:
     """main.cpp present in arithmetic/"""
 
     main_source_path = resources["main_source_path"] = submission.problem_path.joinpath("main.cpp")
     return check_file_exists(main_source_path)
 
 
-@grader.setup.check(tags={"sanity"})
-def check_decimal_header(submission: Submission, resources: dict):
-    """decimal.hpp present in decimal/"""
+@grader.register(tags={"sanity"})
+def check_decimal_header(submission: Submission, resources: dict) -> SetupResult:
+    """decimal.hpp present in decimal."""
 
     decimal_problem = next(filter(lambda p: p.short == "decimal", grader.problem.assignment.problems))
     path = resources["decimal_include_path"] = submission.assignment_path.joinpath(decimal_problem.relative_path)
@@ -49,16 +50,16 @@ def check_decimal_header(submission: Submission, resources: dict):
 checks = {"check_arithmetic_header", "check_arithmetic_source", "check_main_source", "check_decimal_header"}
 
 
-@grader.setup.build(tags={"sanity"}, passing=checks)
+@grader.register(tags={"sanity"}, passing=checks)
 def build_arithmetic(
         arithmetic_source_path: Path,
         main_source_path: Path,
         decimal_include_path: Path,
         submission: Submission,
-        resources: dict):
+        resources: dict) -> SetupResult:
     """main.cpp compiles"""
 
-    result, resources["arithmetic"] = build_gpp_executable(
+    result, resources["arithmetic"] = gpp_compile_object(
         arithmetic_source_path,
         main_source_path,
         destination_path=submission.problem_path.joinpath("arithmetic"),
@@ -67,7 +68,7 @@ def build_arithmetic(
     return result
 
 
-class ArithmeticTest(ExecutableMixin, CompareBytesOutputTest):
+class ArithmeticTest(ProcessCompareStreamTest):
     """Check that expressions evaluate correctly"""
 
     def __init__(self, lines: Iterable[Tuple[bytes, bytes]]):
@@ -84,7 +85,7 @@ class ArithmeticTest(ExecutableMixin, CompareBytesOutputTest):
     @classmethod
     def load(cls, string: str):
         for test_name, test_description, test_tags, test_lines in cls.parse(string):
-            grader.test.correctness(
+            grader.register[CorrectnessResult](
                 name=test_name,
                 tags=test_tags,
                 description=test_description,
@@ -253,6 +254,7 @@ mixed_any
 """)
 
 
-@grader.teardown.cleanup(passing={"build_arithmetic"})
-def cleanup_arithmetic(arithmetic: ExecutableFile):
+@grader.register(passing={"build_arithmetic"})
+def cleanup_arithmetic(arithmetic: ExecutableFile) -> CleanupResult:
     delete_file(arithmetic.path)
+    return CleanupResult()
