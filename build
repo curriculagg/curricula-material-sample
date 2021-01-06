@@ -1,5 +1,0 @@
-#!/bin/bash
-
-./curricula -vvv compile homework \
-  --template template \
-  "$@"
