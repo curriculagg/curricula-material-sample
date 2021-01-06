@@ -2,7 +2,7 @@ from curricula_grade.shortcuts import *
 from curricula_grade.setup.common import check_file_exists
 from curricula_grade.test.correctness.common import ProcessCompareExitCodeTest
 from curricula_grade_cpp import Paths
-from curricula_grade_cpp.setup.common import gpp_compile_object
+from curricula_grade_cpp.setup.common.gpp import gpp_compile_object
 from curricula.library.files import delete_file
 
 from pathlib import Path

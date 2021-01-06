@@ -1,7 +1,7 @@
 from curricula_grade.shortcuts import *
 
 from curricula_grade.setup.common import check_file_exists
-from curricula_grade_cpp.setup.common import gpp_compile_object
+from curricula_grade_cpp.setup.common.gpp import GppObjectSetup
 from curricula_grade.test.correctness.common import ProcessCompareStreamTest
 from curricula.library.files import delete_file
 
@@ -47,25 +47,24 @@ def check_decimal_header(submission: Submission, resources: dict) -> SetupResult
     return check_file_exists(path.joinpath("decimal.hpp"))
 
 
-checks = {"check_arithmetic_header", "check_arithmetic_source", "check_main_source", "check_decimal_header"}
+@grader.register(
+    name="build_arithmetic",
+    tags={"sanity"},
+    passing={"check_arithmetic_header", "check_arithmetic_source", "check_main_source", "check_decimal_header"})
+class BuildArithmetic(GppObjectSetup):
+    """Build the arithmetic binary."""
 
+    timeout = 60
+    executable_name = "arithmetic"
 
-@grader.register(tags={"sanity"}, passing=checks)
-def build_arithmetic(
-        arithmetic_source_path: Path,
-        main_source_path: Path,
-        decimal_include_path: Path,
-        submission: Submission,
-        resources: dict) -> SetupResult:
-    """main.cpp compiles"""
+    def get_source_paths(self, arithmetic_source_path: Path, main_source_path: Path) -> Iterable[Path]:
+        return arithmetic_source_path, main_source_path
 
-    result, resources["arithmetic"] = gpp_compile_object(
-        arithmetic_source_path,
-        main_source_path,
-        destination_path=submission.problem_path.joinpath("arithmetic"),
-        gpp_options=(f"-I{submission.problem_path}", f"-I{decimal_include_path}", *GPP_OPTIONS),
-        timeout=60)
-    return result
+    def get_destination_path(self, submission: Submission) -> Path:
+        return submission.problem_path.joinpath("arithmetic")
+
+    def get_gpp_options(self, submission: Submission, decimal_include_path: Path) -> Iterable[str]:
+        return f"-I{submission.problem_path}", f"-I{decimal_include_path}", *GPP_OPTIONS
 
 
 class ArithmeticTest(ProcessCompareStreamTest):
@@ -254,7 +253,6 @@ mixed_any
 """)
 
 
-@grader.register(passing={"build_arithmetic"})
-def cleanup_arithmetic(arithmetic: ExecutableFile) -> CleanupResult:
+@grader.register[CleanupResult](passing={"build_arithmetic"})
+def cleanup_arithmetic(arithmetic: ExecutableFile):
     delete_file(arithmetic.path)
-    return CleanupResult()
